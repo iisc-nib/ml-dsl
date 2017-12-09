@@ -1,8 +1,11 @@
 #ifndef _EXPRESSION_H_
 #define _EXPRESSION_H_
 
+#include "valuevisitor.h"
+
 class ValueType;
 class ValueVisitor;
+class Neuron;
 
 /*
    Value
@@ -15,21 +18,34 @@ class ValueVisitor;
 		- Binary
 	- Relational operators (<, >, <=, >=)
 	- Boolean operators (&&, ||, !)
-	- Pointwise function (sin, cos etc)
-	- GetProperty(Value, length)
-	- GetInputValue
-	- GetInputLength
+	- (*) Pointwise function (sin, cos etc)
+		- TODO How do we call these functions? Do we just use the name and let the loader bind?
+	- (*) GetPropertyValue
+	- (*) GetInputValue
+	- GetVectorLength (?)
 	- Conditional expression
-	- Dot product
-	- Reduction (?)
+	- Dot product (?)
+	- (*) Reduction
 */
+
+// TODO Make references and pointers consistent
+// TODO Write create methods for each type of Value. So that we can not leak Value objects.
+// TODO Write operator overloads so that users can write expressions that look like code (val1 + val2 for example)
 
 class Value
 {
 protected:
 	ValueType *m_type;
 public:
-	ValueType& GetType() { return *m_type; }
+    Value()
+        :m_type(nullptr)
+    { }
+	ValueType& GetType() 
+    { 
+        if (m_type == nullptr)
+            InferType();
+        return *m_type;
+    }
 	virtual void InferType() = 0;
 	virtual void AcceptVisitor(ValueVisitor& visitor) = 0;
 	virtual ~Value() { delete m_type; }
@@ -50,6 +66,11 @@ public:
 	int64_t GetValue() { return m_val; }
 	virtual void InferType() { m_type = new IntegerType; }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static IntegerConstant& Create(int64_t val)
+    {
+        return *(new IntegerConstant(val));
+    }
 };
 
 class BooleanConstant : public Constant
@@ -63,6 +84,11 @@ public:
 	bool GetValue() { return m_val; }
 	virtual void InferType() { m_type = new BooleanType; }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static BooleanConstant& Create(bool val)
+    {
+        return *(new BooleanConstant(val));
+    }
 };
 
 class RealConstant : public Constant
@@ -70,12 +96,17 @@ class RealConstant : public Constant
 protected:
 	double m_val;
 public:
-	RealConstant(bool val)
+	RealConstant(double val)
 		:m_val(val)
 	{ }
 	double GetValue() { return m_val; }
 	virtual void InferType() { m_type = new RealType; }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static RealConstant& Create(double val)
+    {
+        return *(new RealConstant(val));
+    }
 };
 
 class NumericOp : public Value
@@ -101,6 +132,11 @@ public:
 		:UnaryOp(operand)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+    
+    static UnaryPlus& Create(Value& operand)
+    {
+        return *(new UnaryPlus(&operand));
+    }
 };
 
 class UnaryMinus : public UnaryOp
@@ -110,6 +146,11 @@ public:
 		:UnaryOp(operand)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static UnaryMinus& Create(Value& operand)
+    {
+        return *(new UnaryMinus(&operand));
+    }
 };
 
 class BinaryOp : public NumericOp
@@ -123,7 +164,7 @@ public:
 	{ }
 	Value* GetRHS() { return m_rhs; }
 	Value* GetLHS() { return m_lhs; }
-	virtual void InferTypes();
+	virtual void InferType();
 };
 
 class BinaryAdd : public BinaryOp
@@ -133,6 +174,11 @@ public:
 		:BinaryOp(rhs, lhs)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static BinaryAdd& Create(Value& lhs, Value& rhs)
+    {
+        return *(new BinaryAdd(&lhs, &rhs));
+    }
 };
 
 class BinarySubtract : public BinaryOp
@@ -142,6 +188,11 @@ public:
 		:BinaryOp(rhs, lhs)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static BinarySubtract& Create(Value& lhs, Value& rhs)
+    {
+        return *(new BinarySubtract(&lhs, &rhs));
+    }
 };
 
 class BinaryMultiply : public BinaryOp
@@ -151,6 +202,11 @@ public:
 		:BinaryOp(rhs, lhs)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static BinaryMultiply& Create(Value& lhs, Value& rhs)
+    {
+        return *(new BinaryMultiply(&lhs, &rhs));
+    }
 };
 
 class BinaryDivide : public BinaryOp
@@ -160,6 +216,124 @@ public:
 		:BinaryOp(rhs, lhs)
 	{ }
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static BinaryDivide& Create(Value& lhs, Value& rhs)
+    {
+        return *(new BinaryDivide(&lhs, &rhs));
+    }
 };
+
+class GetProperty : public Value
+{
+	int32_t m_propertyID;
+    Neuron& m_neuron; // [TODO] Should this even be here? This is only for the type inference
+public:
+	GetProperty(Neuron& neuron, int32_t propertyID)
+		:m_neuron(neuron), m_propertyID(propertyID)
+	{ }
+    virtual void InferType();
+	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+    Neuron& GetOwningNeuron() { return m_neuron; }
+    int32_t GetPropertyID() { return m_propertyID; }
+
+    static GetProperty& Create(Neuron& neuron, int32_t propertyID)
+    {
+        return *(new GetProperty(neuron, propertyID));
+    }
+};
+
+class GetInputValue : public Value
+{
+    Neuron& m_neuron;
+public:
+    GetInputValue(Neuron& neuron)
+        :m_neuron(neuron)
+    { }
+    virtual void InferType();
+	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+    Neuron& GetOwningNeuron() { return m_neuron; }
+
+    static GetInputValue& Create(Neuron& neuron)
+    {
+        return *(new GetInputValue(neuron));
+    }
+};
+
+class Reduction : public Value
+{
+public:
+    enum ReductionType { Sum, Multiply, Max };
+private:
+    Value *m_operand;
+    ReductionType m_reductionType;
+public:
+    Reduction(Value *operand, ReductionType reductionType)
+        :m_operand(operand)
+    { }
+    Value* GetOperand() { return m_operand; }
+    ReductionType GetReductionType() { return m_reductionType; }
+    virtual void InferType();
+	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static Reduction& Create(Value& operand, ReductionType reductionType)
+    {
+        return *(new Reduction(&operand, reductionType));
+    }
+};
+
+inline Value& Constant(bool val)
+{
+    return BooleanConstant::Create(val);
+}
+
+inline Value& Constant(int32_t val)
+{
+    return IntegerConstant::Create(val);
+}
+
+inline Value& Constant(int64_t val)
+{
+    return IntegerConstant::Create(val);
+}
+
+inline Value& Constant(float val)
+{
+    return RealConstant::Create(val);
+}
+
+inline Value& Constant(double val)
+{
+    return RealConstant::Create(val);
+}
+
+inline Value& operator+(Value& operand)
+{
+    return UnaryPlus::Create(operand);
+}
+
+inline Value& operator-(Value& operand)
+{
+    return UnaryMinus::Create(operand);
+}
+
+inline Value& operator+(Value& lhs, Value& rhs)
+{
+    return BinaryAdd::Create(lhs, rhs);
+}
+
+inline Value& operator-(Value& lhs, Value& rhs)
+{
+    return BinarySubtract::Create(lhs, rhs);
+}
+
+inline Value& operator*(Value& lhs, Value& rhs)
+{
+    return BinaryMultiply::Create(lhs, rhs);
+}
+
+inline Value& operator/(Value& lhs, Value& rhs)
+{
+    return BinaryDivide::Create(lhs, rhs);
+}
 
 #endif // _EXPRESSION_H_

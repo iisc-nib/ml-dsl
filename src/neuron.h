@@ -2,16 +2,16 @@
 #define _NEURON_H_
 
 #include <vector>
+#include <list>
 #include <cstdint>
 
 class Layer;
 class ValueType;
 class Neuron;
-
-typedef std::vector<Neuron*> NeuronList;
-
+class Value;
 class NeuronProperty;
 
+typedef std::vector<Neuron*> NeuronList;
 
 // Neuron needs to have a forward propagation function specified in our IR
 // Specialized neuron types like weighted neuron will automatically be 
@@ -34,26 +34,68 @@ class NeuronProperty;
 class Neuron
 {
 	friend class Layer;
+    friend void ConnectNeurons(Neuron& src, Neuron& sink);
 public:
-	void AddSource(Neuron& src);
-	void AddSink(Neuron& sink);
 
 	int32_t AddScalarDoubleNeuronProperty(double val);
 	int32_t AddVectorDoubleNeuronProperty(std::vector<double>& val);
 
+    NeuronProperty& GetNeuronProperty(int32_t propID) { return *m_properties[propID]; }
+
+    void SetForwardPropagationValue(Value& value) { m_forwardValue = &value; }
+    Value& GetForwardPropagationValue() { return *m_forwardValue; }
+
+    virtual ~Neuron() { }
+
 protected:
-	
+	// The layer that this neuron belongs to
 	Layer &m_layer;
-	
+
+	// Represents the expression used to compute the output value
+    // of a neuron
+    Value* m_forwardValue;
+
 	NeuronList m_sources;
 	NeuronList m_sinks;
 
 	std::vector<NeuronProperty*> m_properties;
 
 	Neuron(Layer &layer) 
-		:m_layer(layer)
+		:m_layer(layer), m_forwardValue(nullptr)
    	{ }
+
+	void AddSource(Neuron& src) { m_sources.push_back(&src); }
+	void AddSink(Neuron& sink) { m_sinks.push_back(&sink); }
 };
+
+// TODO Not all functions that are on neuron make sense for input and output neurons. We need to refactor
+class InputNeuron : public Neuron
+{
+    friend class Layer;
+    friend void ConnectNeurons(Neuron& src, Neuron& sink);
+public:
+    int32_t GetIndex() { return m_index; }
+protected:
+    int32_t m_index;
+    InputNeuron(Layer& layer, int32_t index)
+        :Neuron(layer), m_index(index)
+    { }
+};
+
+class OutputNeuron : public Neuron
+{
+    friend class Layer;
+    friend void ConnectNeurons(Neuron& src, Neuron& sink);
+public:
+    int32_t GetIndex() { return m_index; }
+protected:
+    int32_t m_index;
+    OutputNeuron(Layer& layer, int32_t index)
+        :Neuron(layer), m_index(index)
+    { }
+};
+
+void ConnectNeurons(Neuron& src, Neuron& sink);
 
 #endif // _NEURON_H_
 

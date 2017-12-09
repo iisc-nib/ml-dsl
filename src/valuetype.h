@@ -23,6 +23,7 @@ class ValueType
 public:
 	virtual void AcceptVisitor(ValueTypeVisitor& visitor) = 0;
 	virtual ValueType* Clone() = 0;
+    virtual ~ValueType() { }
 protected:
 	ValueType() { }
 };
@@ -69,6 +70,7 @@ public:
 	ScalarType& GetElementType() { return m_elemType; }
 	virtual void AcceptVisitor(ValueTypeVisitor& visitor) { visitor.Visit(*this); }
 	virtual ValueType* Clone(){ return new VectorType(*dynamic_cast<ScalarType*>(m_elemType.Clone())); }
+    ~VectorType() { delete &m_elemType; }
 };
 
 #endif // _NEURONPROPERTYTYPE_H_

@@ -6,11 +6,14 @@
 
 class ValueType;
 
+// [TODO] What is the difference between a Neuron property and a constant value?
 // [TODO] Do we need to keep a type with each of these properties?
 class NeuronProperty
 {
 protected:
 	NeuronProperty() { }
+public:
+    virtual ~NeuronProperty() { }
 };
 
 class ScalarDoubleNeuronProperty : public NeuronProperty
