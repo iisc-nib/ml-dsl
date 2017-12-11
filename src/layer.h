@@ -2,9 +2,11 @@
 #define _LAYER_H_
 
 #include <vector>
+#include <algorithm>
 
 class Neuron;
 class Network;
+class NetworkVisitor;
 
 // TODO should we have subclasses of Layer (Input, hidden, output) so we can construct the right type of neurons automatically?
 class Layer
@@ -13,8 +15,8 @@ class Layer
 
 	Layer()
 	{ }
-public:
 	const NeuronList& GetNeurons() { return m_neurons; }
+public:
     Neuron& GetNeuron(int32_t index) { return *m_neurons[index]; }
     int32_t GetNumberOfNeurons() { return static_cast<int32_t>(m_neurons.size()); }
 
@@ -41,6 +43,10 @@ public:
         m_neurons.push_back(newNeuron);
         return *newNeuron;
     }
+
+    int32_t GetNeuronID(Neuron& neuron) { return std::find(m_neurons.begin(), m_neurons.end(), &neuron) - m_neurons.begin(); }
+
+    virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
     // void AddNeuron(Neuron* neuron) { m_neurons.push_back(neuron); }
 	// void AddNeurons(NeuronList& neurons) { m_neurons.insert(m_neurons.end(), neurons.begin(), neurons.end()); }
 	// void AddNeurons(Neuron** pNeurons, size_t n) { m_neurons.insert(m_neurons.end(), pNeurons, pNeurons + n); }

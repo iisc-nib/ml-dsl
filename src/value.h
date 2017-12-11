@@ -1,6 +1,7 @@
 #ifndef _EXPRESSION_H_
 #define _EXPRESSION_H_
 
+#include <iostream>
 #include "valuevisitor.h"
 
 class ValueType;
@@ -121,7 +122,7 @@ public:
 	UnaryOp(Value *operand)
 		:m_operand(operand)
 	{ }
-	Value* GetOperand() { return m_operand; }
+	Value& GetOperand() { return *m_operand; }
 	virtual void InferType() { m_type = m_operand->GetType().Clone(); }
 };
 
@@ -162,8 +163,8 @@ public:
 	BinaryOp(Value *rhs, Value *lhs)
 		:m_rhs(rhs), m_lhs(lhs)
 	{ }
-	Value* GetRHS() { return m_rhs; }
-	Value* GetLHS() { return m_lhs; }
+	Value& GetRHS() { return *m_rhs; }
+	Value& GetLHS() { return *m_lhs; }
 	virtual void InferType();
 };
 
@@ -270,7 +271,7 @@ public:
     Reduction(Value *operand, ReductionType reductionType)
         :m_operand(operand)
     { }
-    Value* GetOperand() { return m_operand; }
+    Value& GetOperand() { return *m_operand; }
     ReductionType GetReductionType() { return m_reductionType; }
     virtual void InferType();
 	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
@@ -336,4 +337,5 @@ inline Value& operator/(Value& lhs, Value& rhs)
     return BinaryDivide::Create(lhs, rhs);
 }
 
+void PrintValue(Value& v, std::ostream& ostr);
 #endif // _EXPRESSION_H_

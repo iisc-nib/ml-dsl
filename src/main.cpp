@@ -1,6 +1,7 @@
 #include <iostream>
 #include "mldslapi.h"
 
+// TODO Should this be constructing a Constant rather than a property?
 void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInputs, std::vector<double>& weights, double bias)
 {
     Value& x = GetInputValue::Create(neuron);
@@ -11,7 +12,7 @@ void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInput
     Value& sumOfwTimesx = Reduction::Create(wTimesx, Reduction::Sum);
     Value& b = Constant(bias);
     Value& out = sumOfwTimesx + b;
-
+    
     neuron.SetForwardPropagationValue(out);
 }
 
@@ -65,6 +66,9 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
 
     net.ConnectLayers(layer1ID, layer2ID, connections);
     net.ConnectLayers(layer2ID, layer3ID, connections);
+    net.CheckTypes();
+
+    PrintNetwork(net, std::cout);
 }
 
 int main()

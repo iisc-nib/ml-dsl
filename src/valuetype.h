@@ -30,6 +30,7 @@ protected:
 
 class ScalarType : public ValueType
 {
+public:
 	virtual void AcceptVisitor(ValueTypeVisitor& visitor) { visitor.Visit(*this); }
 protected:
 	ScalarType() { }
@@ -72,5 +73,7 @@ public:
 	virtual ValueType* Clone(){ return new VectorType(*dynamic_cast<ScalarType*>(m_elemType.Clone())); }
     ~VectorType() { delete &m_elemType; }
 };
+
+void PrintValueType(ValueType& type, std::ostream& ostr);
 
 #endif // _NEURONPROPERTYTYPE_H_

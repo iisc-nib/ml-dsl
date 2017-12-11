@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <cstdint>
+#include "networkvisitor.h"
 
 class Layer;
 class ValueType;
@@ -45,6 +46,15 @@ public:
     void SetForwardPropagationValue(Value& value) { m_forwardValue = &value; }
     Value& GetForwardPropagationValue() { return *m_forwardValue; }
 
+    NeuronList& GetSources() { return m_sources; }
+    NeuronList& GetSinks() { return m_sinks; }
+
+    Layer& GetLayer() { return m_layer; }
+
+    virtual void CheckTypes();
+
+    virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
+
     virtual ~Neuron() { }
 
 protected:
@@ -75,6 +85,8 @@ class InputNeuron : public Neuron
     friend void ConnectNeurons(Neuron& src, Neuron& sink);
 public:
     int32_t GetIndex() { return m_index; }
+    virtual void CheckTypes() { } // Input neurons will always have a real scalar output
+    virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
 protected:
     int32_t m_index;
     InputNeuron(Layer& layer, int32_t index)
@@ -88,6 +100,7 @@ class OutputNeuron : public Neuron
     friend void ConnectNeurons(Neuron& src, Neuron& sink);
 public:
     int32_t GetIndex() { return m_index; }
+    virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
 protected:
     int32_t m_index;
     OutputNeuron(Layer& layer, int32_t index)
