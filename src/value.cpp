@@ -54,17 +54,18 @@ ValueType* JoinTypes(ValueType* type1, ValueType* type2)
     if (isType1Vector && isType2Vector)
     {
         ScalarType *elemType = dynamic_cast<ScalarType*>(JoinTypes(&(vector1->GetElementType()), &(vector2->GetElementType())));
-        return new VectorType(*elemType);
+        int32_t resultLen = std::min(vector1->GetLength(), vector2->GetLength());
+        return new VectorType(*elemType, resultLen);
     }
     else if (isType1Vector)
     {
         ScalarType *elemType = dynamic_cast<ScalarType*>(JoinTypes(&(vector1->GetElementType()), type2));
-        return new VectorType(*elemType);
+        return new VectorType(*elemType, vector1->GetLength());
     }
     else if (isType2Vector)
     {
         ScalarType *elemType = dynamic_cast<ScalarType*>(JoinTypes(type1, &(vector2->GetElementType())));
-        return new VectorType(*elemType);
+        return new VectorType(*elemType, vector2->GetLength());
     }
     else
     {
@@ -80,6 +81,7 @@ void BinaryOp::InferType()
     m_type = JoinTypes(&rhsType, &lhsType);
 }
 
+/*
 void GetProperty::InferType()
 {
     NeuronProperty& neuronProperty = m_neuron.GetNeuronProperty(m_propertyID);
@@ -93,6 +95,7 @@ void GetProperty::InferType()
     else
         throw std::runtime_error("Unknown property type");
 }
+*/
 
 void GetInputValue::InferType()
 {
@@ -100,8 +103,9 @@ void GetInputValue::InferType()
         m_type = new RealType;
     else
     {
+        int32_t numInputs = m_neuron.GetNumInputs();
         ScalarType *elemType = new RealType;
-        m_type = new VectorType(*elemType);
+        m_type = new VectorType(*elemType, numInputs);
     }
 }
 
@@ -191,6 +195,17 @@ public:
         m_ostr << std::endl;
         SetValueTempName(realConst, temp);
     }
+    virtual void Visit(RealVectorConstant& realVecConst)
+    {
+        std::string temp = GetTemp();
+        m_ostr << temp << " = " << "realVector( ";
+        for (int32_t i=0 ; i<realVecConst.GetValue().size() ; ++i)
+            m_ostr << realVecConst.GetValue()[i] << " ";
+        m_ostr << ")";
+        PrintType(realVecConst);
+        m_ostr << std::endl;
+        SetValueTempName(realVecConst, temp);
+    }
     virtual void Visit(UnaryPlus& unaryPlus)
     {
         std::string temp = GetTemp();
@@ -223,6 +238,7 @@ public:
     {
         PrintBinaryOp(binaryDivide, '/');
     }
+    /*
     virtual void Visit(GetProperty& getProperty)
     {
         std::string temp = GetTemp();
@@ -231,6 +247,7 @@ public:
         m_ostr << std::endl;
         SetValueTempName(getProperty, temp);
     }
+    */
     virtual void Visit(GetInputValue& getInput)
     {
         std::string temp = GetTemp();

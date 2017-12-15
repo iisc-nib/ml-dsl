@@ -28,6 +28,9 @@ public:
     {
         m_ostr << "[ Vector ";
         theType.GetElementType().AcceptVisitor(*this);
+        int32_t len = theType.GetLength();
+        if (len != -1)
+            m_ostr << ", " << len;
         m_ostr << " ]";
     }
 };

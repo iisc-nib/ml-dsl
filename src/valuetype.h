@@ -64,13 +64,20 @@ public:
 class VectorType : public ValueType
 {
 	ScalarType& m_elemType;
+    int32_t m_len;
 public:
 	VectorType(ScalarType& elem)
-		:m_elemType(elem)
+		:m_elemType(elem), m_len(-1)
+	{ }
+	VectorType(ScalarType& elem, int32_t len)
+		:m_elemType(elem), m_len(len)
 	{ }
 	ScalarType& GetElementType() { return m_elemType; }
 	virtual void AcceptVisitor(ValueTypeVisitor& visitor) { visitor.Visit(*this); }
-	virtual ValueType* Clone(){ return new VectorType(*dynamic_cast<ScalarType*>(m_elemType.Clone())); }
+	virtual ValueType* Clone(){ return new VectorType(*dynamic_cast<ScalarType*>(m_elemType.Clone()), m_len); }
+
+    int32_t GetLength() { return m_len; }
+    void SetLength(int32_t len) { m_len = len; }
     ~VectorType() { delete &m_elemType; }
 };
 

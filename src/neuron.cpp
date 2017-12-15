@@ -4,6 +4,7 @@
 #include "neuronproperty.h"
 #include "neuron.h"
 
+/*
 int32_t Neuron::AddScalarDoubleNeuronProperty(double val)
 {
 	int32_t propID = m_properties.size();
@@ -17,6 +18,7 @@ int32_t Neuron::AddVectorDoubleNeuronProperty(std::vector<double>& val)
 	m_properties.push_back(new VectorDoubleNeuronProperty(val));
 	return propID;
 }
+*/
 
 void Neuron::CheckTypes()
 {

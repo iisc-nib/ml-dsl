@@ -5,8 +5,7 @@
 void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInputs, std::vector<double>& weights, double bias)
 {
     Value& x = GetInputValue::Create(neuron);
-    int32_t propID = neuron.AddVectorDoubleNeuronProperty(weights);
-    Value& w = GetProperty::Create(neuron, propID);
+    Value& w = Constant(weights);
 
     Value& wTimesx = w*x;
     Value& sumOfwTimesx = Reduction::Create(wTimesx, Reduction::Sum);

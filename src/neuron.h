@@ -38,8 +38,8 @@ class Neuron
     friend void ConnectNeurons(Neuron& src, Neuron& sink);
 public:
 
-	int32_t AddScalarDoubleNeuronProperty(double val);
-	int32_t AddVectorDoubleNeuronProperty(std::vector<double>& val);
+	// int32_t AddScalarDoubleNeuronProperty(double val);
+	// int32_t AddVectorDoubleNeuronProperty(std::vector<double>& val);
 
     NeuronProperty& GetNeuronProperty(int32_t propID) { return *m_properties[propID]; }
 
@@ -48,6 +48,8 @@ public:
 
     NeuronList& GetSources() { return m_sources; }
     NeuronList& GetSinks() { return m_sinks; }
+
+    int32_t GetNumInputs() { return m_sources.size(); }
 
     Layer& GetLayer() { return m_layer; }
 

@@ -2,6 +2,7 @@
 #define _EXPRESSION_H_
 
 #include <iostream>
+#include <vector>
 #include "valuevisitor.h"
 
 class ValueType;
@@ -107,6 +108,30 @@ public:
     static RealConstant& Create(double val)
     {
         return *(new RealConstant(val));
+    }
+};
+
+class RealVectorConstant : public Constant
+{
+protected:
+	std::vector<double> m_val;
+public:
+	RealVectorConstant(std::vector<double>& val)
+		:m_val(val)
+	{ }
+	std::vector<double>& GetValue() { return m_val; }
+	virtual void InferType()
+    {
+        ScalarType& elemType = *(new RealType);
+        VectorType* vecType  = new VectorType(elemType);
+        vecType->SetLength(m_val.size());
+        m_type = vecType;
+    }
+	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static RealVectorConstant& Create(std::vector<double>& val)
+    {
+        return *(new RealVectorConstant(val));
     }
 };
 
@@ -224,6 +249,9 @@ public:
     }
 };
 
+/*
+Use constants instead of properties!
+
 class GetProperty : public Value
 {
 	int32_t m_propertyID;
@@ -242,6 +270,7 @@ public:
         return *(new GetProperty(neuron, propertyID));
     }
 };
+*/
 
 class GetInputValue : public Value
 {
@@ -282,57 +311,62 @@ public:
     }
 };
 
-inline Value& Constant(bool val)
+inline BooleanConstant& Constant(bool val)
 {
     return BooleanConstant::Create(val);
 }
 
-inline Value& Constant(int32_t val)
+inline IntegerConstant& Constant(int32_t val)
 {
     return IntegerConstant::Create(val);
 }
 
-inline Value& Constant(int64_t val)
+inline IntegerConstant& Constant(int64_t val)
 {
     return IntegerConstant::Create(val);
 }
 
-inline Value& Constant(float val)
+inline RealConstant& Constant(float val)
 {
     return RealConstant::Create(val);
 }
 
-inline Value& Constant(double val)
+inline RealConstant& Constant(double val)
 {
     return RealConstant::Create(val);
 }
 
-inline Value& operator+(Value& operand)
+inline RealVectorConstant& Constant(std::vector<double>& val)
+{
+    return RealVectorConstant::Create(val);
+}
+
+inline UnaryPlus& operator+(Value& operand)
 {
     return UnaryPlus::Create(operand);
 }
 
-inline Value& operator-(Value& operand)
+inline UnaryMinus& operator-(Value& operand)
 {
     return UnaryMinus::Create(operand);
 }
 
-inline Value& operator+(Value& lhs, Value& rhs)
+inline BinaryAdd& operator+(Value& lhs, Value& rhs)
 {
     return BinaryAdd::Create(lhs, rhs);
 }
 
-inline Value& operator-(Value& lhs, Value& rhs)
+inline BinarySubtract& operator-(Value& lhs, Value& rhs)
 {
     return BinarySubtract::Create(lhs, rhs);
 }
 
-inline Value& operator*(Value& lhs, Value& rhs)
+inline BinaryMultiply& operator*(Value& lhs, Value& rhs)
 {
     return BinaryMultiply::Create(lhs, rhs);
 }
 
-inline Value& operator/(Value& lhs, Value& rhs)
+inline BinaryDivide& operator/(Value& lhs, Value& rhs)
 {
     return BinaryDivide::Create(lhs, rhs);
 }
