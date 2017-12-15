@@ -10,7 +10,8 @@ void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInput
     Value& wTimesx = w*x;
     Value& sumOfwTimesx = Reduction::Create(wTimesx, Reduction::Sum);
     Value& b = Constant(bias);
-    Value& out = sumOfwTimesx + b;
+    Value& linearCombination = sumOfwTimesx + b;
+    Value& out = ActivationFunction::Create(linearCombination, "sigmoid");
     
     neuron.SetForwardPropagationValue(out);
 }

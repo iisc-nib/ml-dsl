@@ -311,6 +311,25 @@ public:
     }
 };
 
+class ActivationFunction : public Value
+{
+    std::string m_functionName;
+    Value *m_operand;
+public:
+    ActivationFunction(Value& operand, const std::string& name)
+        :m_operand(&operand), m_functionName(name)
+    { }
+    Value& GetOperand() { return *m_operand; }
+    std::string& GetName() { return m_functionName; }
+    virtual void InferType();
+	virtual void AcceptVisitor(ValueVisitor& visitor) { visitor.Visit(*this); }
+
+    static ActivationFunction& Create(Value& operand, const std::string& name)
+    {
+        return *(new ActivationFunction(operand, name));
+    }
+};
+
 inline BooleanConstant& Constant(bool val)
 {
     return BooleanConstant::Create(val);

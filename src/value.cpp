@@ -120,6 +120,17 @@ void Reduction::InferType()
     m_type = operandVectorType->GetElementType().Clone();
 }
 
+void ActivationFunction::InferType()
+{
+    ValueType& operandType = m_operand->GetType();
+    ScalarType* operandScalarType = dynamic_cast<ScalarType*>(&operandType);
+    if (operandScalarType == nullptr)
+    {
+        throw std::runtime_error("Activation function argument must be a scalar type");
+    }
+    m_type = operandScalarType->Clone();
+}
+
 class PrintValueVisitor : public ValueVisitor
 {
     std::ostream& m_ostr;
@@ -272,6 +283,14 @@ public:
         PrintType(reduction);
         m_ostr << std::endl;
         SetValueTempName(reduction, temp);
+    }
+    virtual void Visit(ActivationFunction& function)
+    {
+        std::string temp = GetTemp();
+        m_ostr << temp << " = " << function.GetName() << "(" << GetValueTempName(function.GetOperand()) << ")";
+        PrintType(function);
+        m_ostr << std::endl;
+        SetValueTempName(function, temp);
     }
 };
 
