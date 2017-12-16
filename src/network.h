@@ -17,6 +17,7 @@ public:
     // TODO Should we support the following API? What happens to connections when a layer is inserted?
     // Layer& InsertLayer(int32_t index);
     Layer& GetLayer(int32_t index) { return *m_layers[index]; }
+    Layer& operator[](int32_t index) { return *m_layers[index]; }
     int32_t GetNumberOfLayers() { return static_cast<int32_t>(m_layers.size()); }
     // TODO should we only take sourceLayer and assume sink is the next layer?
     void ConnectLayers(int32_t sourceLayer, int32_t sinkLayer, std::map<int32_t, std::vector<int32_t>>& connections);

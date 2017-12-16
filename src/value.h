@@ -391,4 +391,9 @@ inline BinaryDivide& operator/(Value& lhs, Value& rhs)
 }
 
 void PrintValue(Value& v, std::ostream& ostr);
+
+// Determine if the two values passed can be implemented with the same code.
+// Basically, are they the same apart from particular numerical values.
+bool AreValuesStructurallyIdentical(Value& v1, Value& v2);
+
 #endif // _EXPRESSION_H_

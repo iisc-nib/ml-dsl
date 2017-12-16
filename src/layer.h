@@ -18,6 +18,7 @@ class Layer
 	const NeuronList& GetNeurons() { return m_neurons; }
 public:
     Neuron& GetNeuron(int32_t index) { return *m_neurons[index]; }
+    Neuron& operator[](int32_t index) { return *m_neurons[index]; }
     int32_t GetNumberOfNeurons() { return static_cast<int32_t>(m_neurons.size()); }
 
 	Neuron& AddNeuron(int32_t& neuronID)

@@ -67,12 +67,43 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
     net.ConnectLayers(layer1ID, layer2ID, connections);
     net.ConnectLayers(layer2ID, layer3ID, connections);
     net.CheckTypes();
-
+    
     PrintNetwork(net, std::cout);
+    std::cout << AreValuesStructurallyIdentical(net[1][0].GetForwardPropagationValue(), net[1][1].GetForwardPropagationValue()) << std::endl;
+}
+
+void TestValueComparison()
+{
+    {
+        auto x1 = Constant(2);
+        auto y1 = Constant(3);
+        auto z1 = x1 + y1;
+
+        auto x2 = Constant(3);
+        auto y2 = Constant(4);
+        auto z2 = x2 + y2;
+
+        std::cout << AreValuesStructurallyIdentical(z1, z2) << std::endl;
+    }
+    {
+        std::vector<double> x1Val(5, 0);
+        std::vector<double> w1Val(5, 0);
+        auto x1 = Constant(x1Val);
+        auto w1 = Constant(w1Val);
+        auto z1 = w1 * x1;
+
+        std::vector<double> x2Val(5, 0);
+        std::vector<double> w2Val(5, 0);
+        auto x2 = Constant(x2Val);
+        auto w2 = Constant(w2Val);
+        auto z2 = w2 + x2;
+        std::cout << AreValuesStructurallyIdentical(z1, z2) << std::endl;
+    }
 }
 
 int main()
 {
 	ConstructSimpleThreeLayerNet(4);
+    TestValueComparison();
     return 0;
 }

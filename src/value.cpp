@@ -299,3 +299,140 @@ void PrintValue(Value& v, std::ostream& ostr)
     PrintValueVisitor printVisitor(ostr);
     v.AcceptVisitor(printVisitor);
 }
+
+
+class ValueStructuralCompareVisitor : public ValueVisitor
+{
+    class StoreAndResetValuePtr
+    {
+        Value *m_storedVal;
+        Value **m_ptrToReset;
+    public:
+        StoreAndResetValuePtr(Value** ptr)
+            :m_storedVal(*ptr), m_ptrToReset(ptr)
+        { }
+        ~StoreAndResetValuePtr()
+        {
+            *m_ptrToReset = m_storedVal;
+        }
+    };
+    Value *m_val;
+    bool m_equal;
+
+    template<typename T>
+    void HandleBinaryOperator(T& val)
+    {
+        StoreAndResetValuePtr resetVal(&m_val);
+        T *otherValue = dynamic_cast<T*>(m_val);
+        if (otherValue == nullptr || !(otherValue->GetType() == val.GetType()))
+        {
+            m_equal = false;
+            return;
+        }
+        m_val = &(otherValue->GetRHS());
+        val.GetRHS().AcceptVisitor(*this);
+        if (m_equal == false)
+            return;
+        m_val = &(otherValue->GetLHS());
+        val.GetLHS().AcceptVisitor(*this);
+    }
+public:
+    ValueStructuralCompareVisitor(Value& v)
+        : m_val(&v), m_equal(true)
+    { }
+    bool GetResult() { return m_equal; }
+    virtual void Visit(IntegerConstant& intConst)
+    {
+        if (dynamic_cast<IntegerConstant*>(m_val) == nullptr)
+            m_equal = false;
+    }
+    virtual void Visit(BooleanConstant& boolConst)
+    {
+        if (dynamic_cast<BooleanConstant*>(m_val) == nullptr)
+            m_equal = false;
+    }
+    virtual void Visit(RealConstant& realConst)
+    {
+        if (dynamic_cast<RealConstant*>(m_val) == nullptr)
+            m_equal = false;
+    }
+    virtual void Visit(RealVectorConstant& realVecConst)
+    {
+        RealVectorConstant* vectorVal = dynamic_cast<RealVectorConstant*>(m_val);
+        if (vectorVal == nullptr || vectorVal->GetValue().size() != realVecConst.GetValue().size())
+            m_equal = false;
+    }
+    virtual void Visit(UnaryPlus& unaryPlus)
+    {
+        StoreAndResetValuePtr resetVal(&m_val);
+        UnaryPlus *unaryPlusVal = dynamic_cast<UnaryPlus*>(m_val);
+        if (unaryPlusVal == nullptr)
+        {
+            m_equal = false;
+            return;
+        }
+        m_val = &(unaryPlusVal->GetOperand());
+        unaryPlus.GetOperand().AcceptVisitor(*this);
+    }
+    virtual void Visit(UnaryMinus& unaryMinus)
+    {
+        StoreAndResetValuePtr resetVal(&m_val);
+        UnaryMinus *unaryMinusVal = dynamic_cast<UnaryMinus*>(m_val);
+        if (unaryMinusVal == nullptr)
+        {
+            m_equal = false;
+            return;
+        }
+        m_val = &(unaryMinusVal->GetOperand());
+        unaryMinus.GetOperand().AcceptVisitor(*this);
+    }
+    virtual void Visit(BinaryAdd& binaryAdd)
+    {
+        HandleBinaryOperator(binaryAdd);
+    }
+    virtual void Visit(BinarySubtract& binarySubtract)
+    {
+        HandleBinaryOperator(binarySubtract);
+    }
+    virtual void Visit(BinaryMultiply& binaryMultiply)
+    {
+        HandleBinaryOperator(binaryMultiply);
+    }
+    virtual void Visit(BinaryDivide& binaryDivide)
+    {
+        HandleBinaryOperator(binaryDivide);
+    }
+    virtual void Visit(GetInputValue& getInput)
+    {
+        if (!(getInput.GetType() == m_val->GetType()))
+            m_equal = false;
+    }
+    virtual void Visit(Reduction& reduction)
+    {
+        Reduction *otherReduction = dynamic_cast<Reduction*>(m_val);
+        if (otherReduction == nullptr || !(otherReduction->GetType() == reduction.GetType()) || 
+            otherReduction->GetReductionType()!=reduction.GetReductionType())
+        {
+            m_equal = false;
+            return;
+        }
+    }
+    virtual void Visit(ActivationFunction& function)
+    {
+        ActivationFunction *otherFunction = dynamic_cast<ActivationFunction*>(m_val);
+        if (otherFunction == nullptr || !(otherFunction->GetType() == function.GetType()) ||
+            otherFunction->GetName() != function.GetName())
+        {
+            m_equal = false;
+            return;
+        }
+    }
+};
+
+
+bool AreValuesStructurallyIdentical(Value& v1, Value& v2)
+{
+    ValueStructuralCompareVisitor compareVisitor(v1);
+    v2.AcceptVisitor(compareVisitor);
+    return compareVisitor.GetResult();
+}

@@ -82,5 +82,6 @@ public:
 };
 
 void PrintValueType(ValueType& type, std::ostream& ostr);
+bool operator==(ValueType& type1, ValueType& type2);
 
 #endif // _NEURONPROPERTYTYPE_H_
