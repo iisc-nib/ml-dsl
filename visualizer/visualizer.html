@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+
+<head>
+	<title> DL-MSL Visualizer </title>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="mlop.json"></script>
+    <style>
+    html {
+      height: 100%;
+      padding-left: 30%;
+    }
+    body {
+      min-height: 100%;
+    }
+    </style>
+</head>
+
+<body>
+	<h2 align="left"> Machine learning - DSL neural network visualizer </h2>
+	<script>
+	
+		var width = 500;
+		var height = 500;
+		var nodeRadius = 25;
+		var vPadding = nodeRadius * 3;
+		var hPadding = nodeRadius * 5;
+		var linkWidth = 2;
+        var maxNeurons = -1;
+        
+        // load the data
+		root = net;
+        
+        function numNeurons(layerID)
+        {
+            return root.layers[layerID].neurons.length;
+        }
+        
+        function getLocation(layerID, neuronID)
+        {
+            var layerTranslate = vPadding * maxNeurons / numNeurons(layerID);
+            return {
+                x: layerID * hPadding + nodeRadius,
+                y: neuronID * vPadding + nodeRadius + layerTranslate
+            };
+        }
+		
+		// create a svg canvas		
+        var dims = d3.select("body").node().getBoundingClientRect();
+		var canvas = d3.select("body")
+						.append("svg")
+                        .attr("width", dims.width)
+                        .attr("height", dims.height);
+		
+		// create a color scale
+		color = d3.scale.category20c()
+					.domain(0, root.layers.length);					
+		
+		var diagonal = d3.svg.line()
+							.x(function(d) { return d.x })
+							.y(function(d) { return d.y });
+		
+        // 
+        for (var layerIdx = 0 ; layerIdx < root.layers.length ; ++layerIdx)
+		{
+			if (maxNeurons < numNeurons(layerIdx))
+                maxNeurons = numNeurons(layerIdx);
+        }
+		
+        
+		// draw the input neurons		
+        
+        // for each layer
+		for (var layerIdx = 0 ; layerIdx < root.layers.length ; ++layerIdx)
+		{
+			var layerCanvas = canvas.append("g")
+									  .attr("transform", "translate(20, 20)");
+			var layer = root.layers[layerIdx];			
+			for (var neuronID = 0 ; neuronID < layer.neurons.length ; ++neuronID)
+			{
+				var curNeuron = layer.neurons[neuronID];
+				
+                var cp = getLocation(layerIdx, neuronID, nodeRadius);
+			
+                // draw the neuron
+				layerCanvas.append("circle")
+							  .attr("cx", cp.x)
+							  .attr("cy", cp.y)
+							  .attr("r", nodeRadius)
+							  .attr("stroke", function(d) { return color(layerIdx); })
+                              .attr("stroke-width", linkWidth)
+                              .attr("fill", "none");
+				layerCanvas.append("text")
+							  .text(function(d) { return ""+ layerIdx; })
+							  .attr("x", cp.x)
+							  .attr("y", cp.y)
+							  .attr("text-anchor", "middle");
+				
+				if (!curNeuron.hasOwnProperty('sinks'))
+					continue;
+				
+				var sinkNodes = curNeuron.sinks.id;
+                
+                // draw the weight edges
+				var pathsGroup = layerCanvas.append("g");
+				for (var k = 0 ; k < sinkNodes.length ; ++k)
+				{
+					var cpsink = getLocation((layerIdx + 1), sinkNodes[k]); // next layer
+					
+					pathsGroup.append("path")
+								  .attr("d", diagonal([{"x" : cp.x + nodeRadius, "y" : cp.y}, {"x" : cpsink.x - nodeRadius, "y" : cpsink.y}]))
+								  .attr("stroke", function(d) { return color(layerIdx + 0.5); })
+								  .attr("stroke-width", linkWidth)
+								  .attr("fill", "none");
+				}
+			}
+		}	
+			
+	</script>	
+</body>
+</html>

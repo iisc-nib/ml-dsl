@@ -1,0 +1,208 @@
+var net = 
+{
+  "layers": [
+	 {
+		"neurons": [
+		   {
+			  "type" : "inputneuron",
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  }
+		   },
+		   {
+		      "type" : "inputneuron",
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  }
+		   },
+		   {
+		      "type" : "inputneuron",
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  }
+		   },
+		   {
+			  "type" : "inputneuron",
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  }
+		   }
+		]
+	 },
+	 {
+		"neurons": [
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.840188 0.394383 0.783099 0.79844 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.911647 0.197551 0.335223 0.76823 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.277775 0.55397 0.477397 0.628871 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.364784 0.513401 0.95223 0.916195 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+           {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "sinks": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.364784 0.513401 0.95223 0.916195 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   }
+		]
+	 },
+	 {
+		"neurons": [
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.635712 0.717297 0.141603 0.606969 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.0163006 0.242887 0.137232 0.804177 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.156679 0.400944 0.12979 0.108809 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   },
+		   {
+			  "sources": {
+				 "id": [
+					"0",
+					"1",
+					"2",
+					"3",
+                    "4"
+				 ]
+			  },
+			  "forwardvalue": "_t1 = real(1)\t[real]\n_t3 = GetInputValue()\t[ Vector [real], 4 ]\n_t4 = realVector( 0.998925 0.218257 0.512932 0.839112 )\t[ Vector [real], 4 ]\n_t5 = _t3 * _t4\t[ Vector [real], 4 ]\n_t2 = Reduce(_t5, Sum)\t[real]\n_t6 = _t1 + _t2\t[real]\n_t0 = sigmoid(_t6)\t[real]"
+		   }
+		]
+	 }
+  ]
+}
