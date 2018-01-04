@@ -4,6 +4,7 @@
 #include "value.h"
 #include "neuron.h"
 #include "neuronproperty.h"
+#include "ir.h"
 
 ValueType* JoinScalarTypes(ValueType* type1, ValueType* type2)
 {
@@ -131,13 +132,16 @@ void ActivationFunction::InferType()
     m_type = operandScalarType->Clone();
 }
 
-class PrintValueVisitor : public ValueVisitor
+class PrintValueVisitor : public IRValueVisitor
 {
+    friend std::string PrintValue(Value& value, std::ostream& ostr, int32_t indent);
+
     std::ostream& m_ostr;
     int32_t m_currTemp;
+    int32_t m_indent;
     std::map<Value*, std::string> m_valueToTempMap;
 
-    void SetValueTempName(Value& v, std::string& str)
+    void SetValueTempName(Value& v, const std::string& str)
     {
         m_valueToTempMap[&v] = str;
     }
@@ -149,7 +153,7 @@ class PrintValueVisitor : public ValueVisitor
             return iter->second;
         else
         {
-            v.AcceptVisitor(*this);
+            v.AcceptIRValueVisitor(*this);
             return m_valueToTempMap[&v];
         }
     }
@@ -167,6 +171,7 @@ class PrintValueVisitor : public ValueVisitor
         const std::string& lhs = GetValueTempName(binOp.GetLHS());
         const std::string& rhs = GetValueTempName(binOp.GetRHS());
         std::string temp = GetTemp();
+        Indent();
         m_ostr << temp << " = " << lhs << " " << op << " " << rhs;
         PrintType(binOp);
         m_ostr << std::endl;
@@ -178,12 +183,19 @@ class PrintValueVisitor : public ValueVisitor
         m_ostr << "\t";
         PrintValueType(v.GetType(), m_ostr);
     }
+
+    void Indent()
+    {
+        for (int32_t i=0; i<m_indent ; ++i)
+            m_ostr << "\t";
+    }
 public:
-    PrintValueVisitor(std::ostream& ostr)
-        :m_ostr(ostr), m_currTemp(0)
+    PrintValueVisitor(std::ostream& ostr, int32_t indent = 0)
+        :m_ostr(ostr), m_currTemp(0), m_indent(indent)
     { }
     virtual void Visit(IntegerConstant& intConst)
     {
+        Indent();
         std::string temp = GetTemp();
         m_ostr << temp << " = " << "int(" << intConst.GetValue() << ")";
         PrintType(intConst);
@@ -192,6 +204,7 @@ public:
     }
     virtual void Visit(BooleanConstant& boolConst)
     {
+        Indent();
         std::string temp = GetTemp();
         m_ostr << temp << " = " << "bool(" << boolConst.GetValue() << ")";
         PrintType(boolConst);
@@ -200,6 +213,7 @@ public:
     }
     virtual void Visit(RealConstant& realConst)
     {
+        Indent();
         std::string temp = GetTemp();
         m_ostr << temp << " = " << "real(" << realConst.GetValue() << ")";
         PrintType(realConst);
@@ -208,6 +222,7 @@ public:
     }
     virtual void Visit(RealVectorConstant& realVecConst)
     {
+        Indent();
         std::string temp = GetTemp();
         m_ostr << temp << " = " << "realVector( ";
         for (int32_t i=0 ; i<realVecConst.GetValue().size() ; ++i)
@@ -219,16 +234,21 @@ public:
     }
     virtual void Visit(UnaryPlus& unaryPlus)
     {
+        std::string operand = GetValueTempName(unaryPlus.GetOperand());
+
+        Indent();
         std::string temp = GetTemp();
-        m_ostr << temp << " = " << "+" << GetValueTempName(unaryPlus.GetOperand());
+        m_ostr << temp << " = " << "+" << operand;
         PrintType(unaryPlus);
         m_ostr << std::endl;
         SetValueTempName(unaryPlus, temp);
     }
     virtual void Visit(UnaryMinus& unaryMinus)
     {
+        std::string operand = GetValueTempName(unaryMinus.GetOperand());
+        Indent();
         std::string temp = GetTemp();
-        m_ostr << temp << " = " << "-" << GetValueTempName(unaryMinus.GetOperand());
+        m_ostr << temp << " = " << "-" << operand;
         PrintType(unaryMinus);
         m_ostr << std::endl;
         SetValueTempName(unaryMinus, temp);
@@ -261,6 +281,7 @@ public:
     */
     virtual void Visit(GetInputValue& getInput)
     {
+        Indent();
         std::string temp = GetTemp();
         m_ostr << temp << " = GetInputValue()";
         PrintType(getInput);
@@ -279,25 +300,169 @@ public:
             reductionTypeStr = "Max";
         else if (reductionType == Reduction::Multiply)
             reductionTypeStr = "Mul";
-        m_ostr << temp << " = Reduce(" << GetValueTempName(operand) << ", " << reductionTypeStr << ")";
+        std::string operandTemp = GetValueTempName(operand);
+        Indent();
+        m_ostr << temp << " = Reduce(" << operandTemp << ", " << reductionTypeStr << ")";
         PrintType(reduction);
         m_ostr << std::endl;
         SetValueTempName(reduction, temp);
     }
     virtual void Visit(ActivationFunction& function)
     {
+        std::string operand = GetValueTempName(function.GetOperand());
+        Indent();
         std::string temp = GetTemp();
-        m_ostr << temp << " = " << function.GetName() << "(" << GetValueTempName(function.GetOperand()) << ")";
+        m_ostr << temp << " = " << function.GetName() << "(" << operand << ")";
         PrintType(function);
         m_ostr << std::endl;
         SetValueTempName(function, temp);
     }
+    virtual void Visit(Variable& variable)
+    {
+        SetValueTempName(variable, variable.GetName());
+    }
+    virtual void Visit(IndexedValue& indexedVal)
+    {
+        std::string temp = GetTemp();
+        std::string indexerTemp = GetValueTempName(indexedVal.GetIndexer());
+        Indent();
+        m_ostr << temp << " = " << indexedVal.GetVariable().GetName() << "[" << indexerTemp << "]";
+        PrintType(indexedVal);
+        m_ostr << std::endl;
+        SetValueTempName(indexedVal, temp);
+    }
+    virtual void Visit(GetValue& getValue)
+    {
+        throw std::runtime_error("Unimplemented method");
+    }
 };
 
-void PrintValue(Value& v, std::ostream& ostr)
+std::string PrintValue(Value& v, std::ostream& ostr, int32_t indent)
 {
-    PrintValueVisitor printVisitor(ostr);
-    v.AcceptVisitor(printVisitor);
+    PrintValueVisitor printVisitor(ostr, indent);
+    v.AcceptIRValueVisitor(printVisitor);
+    return printVisitor.GetValueTempName(v);
+}
+
+class PrintValueExpressionVisitor : public IRValueVisitor
+{
+    std::ostream& m_ostr;
+
+    void PrintBinaryOp(BinaryOp& binOp, char op)
+    {
+        m_ostr << "(";
+        binOp.GetLHS().AcceptIRValueVisitor(*this);
+        m_ostr << op; 
+        binOp.GetRHS().AcceptIRValueVisitor(*this);
+        m_ostr << ")";
+    }
+
+public:
+    PrintValueExpressionVisitor(std::ostream& ostr)
+        :m_ostr(ostr)
+    { }
+    virtual void Visit(IntegerConstant& intConst)
+    {
+        m_ostr << "int(" << intConst.GetValue() << ")";
+    }
+    virtual void Visit(BooleanConstant& boolConst)
+    {
+        m_ostr << "bool(" << boolConst.GetValue() << ")";
+    }
+    virtual void Visit(RealConstant& realConst)
+    {
+        m_ostr << "real(" << realConst.GetValue() << ")";
+    }
+    virtual void Visit(RealVectorConstant& realVecConst)
+    {
+        m_ostr << "realVector( ";
+        for (int32_t i=0 ; i<realVecConst.GetValue().size() ; ++i)
+            m_ostr << realVecConst.GetValue()[i] << " ";
+        m_ostr << ")";
+    }
+    virtual void Visit(UnaryPlus& unaryPlus)
+    {
+        m_ostr << "(+";
+        unaryPlus.GetOperand().AcceptIRValueVisitor(*this);
+        m_ostr << ")";
+    }
+    virtual void Visit(UnaryMinus& unaryMinus)
+    {
+        m_ostr << "(-";
+        unaryMinus.GetOperand().AcceptIRValueVisitor(*this);
+        m_ostr << ")";
+    }
+    virtual void Visit(BinaryAdd& binaryAdd)
+    {
+        PrintBinaryOp(binaryAdd, '+');
+    }
+    virtual void Visit(BinarySubtract& binarySubtract)
+    {
+        PrintBinaryOp(binarySubtract, '-');
+    }
+    virtual void Visit(BinaryMultiply& binaryMultiply)
+    {
+        PrintBinaryOp(binaryMultiply, '*');
+    }
+    virtual void Visit(BinaryDivide& binaryDivide)
+    {
+        PrintBinaryOp(binaryDivide, '/');
+    }
+    /*
+    virtual void Visit(GetProperty& getProperty)
+    {
+        std::string temp = GetTemp();
+        m_ostr << temp << " = GetPropertyValue(" <<  getProperty.GetPropertyID() << ")";
+        PrintType(getProperty);
+        m_ostr << std::endl;
+        SetValueTempName(getProperty, temp);
+    }
+    */
+    virtual void Visit(GetInputValue& getInput)
+    {
+        m_ostr << "GetInputValue()";
+    }
+    virtual void Visit(Reduction& reduction)
+    {
+        Value& operand = reduction.GetOperand();
+        Reduction::ReductionType reductionType = reduction.GetReductionType();
+        std::string reductionTypeStr;
+        if (reductionType == Reduction::Sum)
+            reductionTypeStr = "Sum";
+        else if (reductionType == Reduction::Max)
+            reductionTypeStr = "Max";
+        else if (reductionType == Reduction::Multiply)
+            reductionTypeStr = "Mul";
+        m_ostr << "Reduce(";
+        operand.AcceptIRValueVisitor(*this);
+        m_ostr << ", " << reductionTypeStr << ")";
+    }
+    virtual void Visit(ActivationFunction& function)
+    {
+        m_ostr << function.GetName() << "(";
+        function.GetOperand().AcceptIRValueVisitor(*this);
+        m_ostr << ")";
+    }
+    virtual void Visit(Variable& variable)
+    {
+        m_ostr << variable.GetName();
+    }
+    virtual void Visit(IndexedValue& indexedVal)
+    {
+        m_ostr << indexedVal.GetVariable().GetName() << "[";
+        indexedVal.GetIndexer().AcceptIRValueVisitor(*this);
+        m_ostr << "]";
+    }
+    virtual void Visit(GetValue& getValue)
+    {
+        throw std::runtime_error("Unimplemented method");
+    }
+};
+
+void PrintValueExpression(Value& v, std::ostream& ostr)
+{
+    PrintValueExpressionVisitor printVisitor(ostr);
+    v.AcceptIRValueVisitor(printVisitor);
 }
 
 

@@ -78,25 +78,41 @@ void Network::Destroy(Network& network)
 class NetworkPrintVisitor : public NetworkVisitor
 {
     std::ostream& m_ostr;
+    int32_t m_indent = 0;
     void PrintSourceNeurons(Neuron& neuron)
     {
         NeuronList& sources = neuron.GetSources();
+        Indent();
         m_ostr << "<sources>" << std::endl;
+        m_indent++;
         for (int32_t i=0 ; i<sources.size() ; ++i)
         {
+            Indent();
             m_ostr << "<id>" << sources[i]->GetLayer().GetNeuronID(*sources[i]) << "</id>\n";
         }
+        m_indent--;
+        Indent();
         m_ostr << "</sources>" << std::endl;
     }
     void PrintSinkNeurons(Neuron& neuron)
     {
         NeuronList& sinks = neuron.GetSinks();
+        Indent();
+        m_indent++;
         m_ostr << "<sinks>" << std::endl;
         for (int32_t i=0 ; i<sinks.size() ; ++i)
         {
+            Indent();
             m_ostr << "<id>" << sinks[i]->GetLayer().GetNeuronID(*sinks[i]) << "</id>\n";
         }
+        m_indent--;
+        Indent();
         m_ostr << "</sinks>" << std::endl;
+    }
+    void Indent()
+    {
+        for (int32_t i=0 ; i<m_indent ; ++i)
+            m_ostr << "\t";
     }
 
 public:
@@ -106,46 +122,70 @@ public:
     virtual void Visit(Network& network)
     {
         m_ostr << "<net>" << std::endl;
+        m_indent++;
         for (int32_t i=0 ; i<network.GetNumberOfLayers() ; ++i)
         {
             Layer& layer = network.GetLayer(i);
             layer.AcceptVisitor(*this);
         }
+        m_indent--;
         m_ostr << "</net>" << std::endl;
     }
     virtual void Visit(Layer& layer)
     {
+        Indent();
         m_ostr << "<layer>" << std::endl;
+        m_indent++;
         for (int32_t i=0 ; i<layer.GetNumberOfNeurons() ; ++i)
         {
             Neuron& neuron = layer.GetNeuron(i);
             neuron.AcceptVisitor(*this);
         }
+        m_indent--;
+        Indent();
         m_ostr << "</layer>" << std::endl;
     }
     virtual void Visit(Neuron& neuron)
     {
+        Indent();
         m_ostr << "<neuron>" << std::endl;
+        m_indent++;
+        
         PrintSourceNeurons(neuron);
         PrintSinkNeurons(neuron);
+
+        Indent();
         m_ostr << "<forwardvalue>" << std::endl;
-        PrintValue(neuron.GetForwardPropagationValue(), m_ostr);
+        PrintValue(neuron.GetForwardPropagationValue(), m_ostr, m_indent+1);
+        Indent();
         m_ostr << "</forwardvalue>" << std::endl;
+        m_indent--;
+        Indent();
         m_ostr << "</neuron>" << std::endl;
     }
     virtual void Visit(InputNeuron& inputNeuron)
     {
+        Indent();
         m_ostr << "<inputneuron>" << std::endl;
+        m_indent++;
         PrintSinkNeurons(inputNeuron);
+        m_indent--;
+        Indent();
         m_ostr << "</inputneuron>" << std::endl;
     }
     virtual void Visit(OutputNeuron& outputNeuron)
     {
+        Indent();
         m_ostr << "<outputneuron>" << std::endl;
+        m_indent++;
         PrintSourceNeurons(outputNeuron);
+        Indent();
         m_ostr << "<forwardvalue>" << std::endl;
-        PrintValue(outputNeuron.GetForwardPropagationValue(), m_ostr);
+        PrintValue(outputNeuron.GetForwardPropagationValue(), m_ostr, m_indent+1);
+        Indent();
         m_ostr << "</forwardvalue>" << std::endl;
+        m_indent--;
+        Indent();
         m_ostr << "</outputneuron>" << std::endl;
     }
 };

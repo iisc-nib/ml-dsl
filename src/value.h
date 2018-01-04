@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <vector>
+#include "valuetype.h"
 #include "valuevisitor.h"
+#include "irvaluevisitor.h"
 
 class ValueType;
 class ValueVisitor;
@@ -50,14 +52,25 @@ public:
     }
 	virtual void InferType() = 0;
 	virtual void AcceptVisitor(ValueVisitor& visitor) = 0;
+
+    // This is a workaround so that we can separate out the IR values (ones that only the lowering
+    // transform is allowed to construct)and the DSL values (values that users can construct)
+    virtual void AcceptIRValueVisitor(IRValueVisitor& visitor)
+    {
+        AcceptVisitor(visitor);
+    }
+
 	virtual ~Value() { delete m_type; }
 };
 
-class Constant : public Value
+class ConstantValue : public Value
 {
+public:
+    ConstantValue() { }
+    virtual ~ConstantValue() { }
 };
 
-class IntegerConstant : public Constant
+class IntegerConstant : public ConstantValue
 {
 protected:
 	int64_t m_val;
@@ -75,7 +88,7 @@ public:
     }
 };
 
-class BooleanConstant : public Constant
+class BooleanConstant : public ConstantValue
 {
 protected:
 	bool m_val;
@@ -93,7 +106,7 @@ public:
     }
 };
 
-class RealConstant : public Constant
+class RealConstant : public ConstantValue
 {
 protected:
 	double m_val;
@@ -111,7 +124,7 @@ public:
     }
 };
 
-class RealVectorConstant : public Constant
+class RealVectorConstant : public ConstantValue
 {
 protected:
 	std::vector<double> m_val;
@@ -372,25 +385,26 @@ inline UnaryMinus& operator-(Value& operand)
 
 inline BinaryAdd& operator+(Value& lhs, Value& rhs)
 {
-    return BinaryAdd::Create(lhs, rhs);
+    return BinaryAdd::Create(rhs, lhs);
 }
 
 inline BinarySubtract& operator-(Value& lhs, Value& rhs)
 {
-    return BinarySubtract::Create(lhs, rhs);
+    return BinarySubtract::Create(rhs, lhs);
 }
 
 inline BinaryMultiply& operator*(Value& lhs, Value& rhs)
 {
-    return BinaryMultiply::Create(lhs, rhs);
+    return BinaryMultiply::Create(rhs, lhs);
 }
 
 inline BinaryDivide& operator/(Value& lhs, Value& rhs)
 {
-    return BinaryDivide::Create(lhs, rhs);
+    return BinaryDivide::Create(rhs, lhs);
 }
 
-void PrintValue(Value& v, std::ostream& ostr);
+std::string PrintValue(Value& v, std::ostream& ostr, int32_t indent=0);
+void PrintValueExpression(Value& v, std::ostream& ostr);
 
 // Determine if the two values passed can be implemented with the same code.
 // Basically, are they the same apart from particular numerical values.

@@ -17,7 +17,6 @@ class BinaryAdd;
 class BinarySubtract;
 class BinaryMultiply;
 class BinaryDivide;
-// class GetProperty;
 class GetInputValue;
 class Reduction;
 class ActivationFunction;
@@ -39,7 +38,6 @@ public:
     virtual void Visit(BinarySubtract& binarySubtract) = 0;
     virtual void Visit(BinaryMultiply& binaryMultiply) = 0;
     virtual void Visit(BinaryDivide& binaryDivide) = 0;
-    // virtual void Visit(GetProperty& getProperty) = 0;
     virtual void Visit(GetInputValue& getInput) = 0;   
     virtual void Visit(Reduction& reduction) = 0;
     virtual void Visit(ActivationFunction& function) = 0;

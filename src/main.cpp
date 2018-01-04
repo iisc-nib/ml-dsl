@@ -1,7 +1,7 @@
 #include <iostream>
+#include <cassert>
 #include "mldslapi.h"
 
-// TODO Should this be constructing a Constant rather than a property?
 void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInputs, std::vector<double>& weights, double bias)
 {
     Value& x = GetInputValue::Create(neuron);
@@ -69,7 +69,6 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
     net.CheckTypes();
     
     PrintNetwork(net, std::cout);
-    std::cout << AreValuesStructurallyIdentical(net[1][0].GetForwardPropagationValue(), net[1][1].GetForwardPropagationValue()) << std::endl;
 }
 
 void TestValueComparison()
@@ -83,7 +82,7 @@ void TestValueComparison()
         auto y2 = Constant(4);
         auto z2 = x2 + y2;
 
-        std::cout << AreValuesStructurallyIdentical(z1, z2) << std::endl;
+        assert(AreValuesStructurallyIdentical(z1, z2));
     }
     {
         std::vector<double> x1Val(5, 0);
@@ -97,7 +96,23 @@ void TestValueComparison()
         auto x2 = Constant(x2Val);
         auto w2 = Constant(w2Val);
         auto z2 = w2 + x2;
-        std::cout << AreValuesStructurallyIdentical(z1, z2) << std::endl;
+        assert(!AreValuesStructurallyIdentical(z1, z2));
+    }
+}
+
+void TestIRValuesAndStatements()
+{
+    {
+        auto start = Constant(0);
+        auto end = Constant(10);
+        auto forLoop = ForLoop::Create(start, end);
+        auto x = Variable::Create("x", *(new IntegerType)); // int x
+        auto arr = Variable::Create("arr", *(new VectorType(*(new IntegerType), 10))); // int arr[10]
+        auto arrRef = IndexedValue(arr, forLoop.GetIndexVariable());
+        auto assignmentRHS = x + arrRef;
+        auto assignmentStm = Assignment::Create(x, assignmentRHS);
+        forLoop.AddStatement(assignmentStm);
+        Print(forLoop, std::cout);
     }
 }
 
@@ -105,5 +120,6 @@ int main()
 {
 	ConstructSimpleThreeLayerNet(4);
     TestValueComparison();
+    TestIRValuesAndStatements();
     return 0;
 }
