@@ -50,6 +50,7 @@ public:
     NeuronList& GetSinks() { return m_sinks; }
 
     int32_t GetNumInputs() { return m_sources.size(); }
+    int32_t GetNeuronID();
 
     Layer& GetLayer() { return m_layer; }
 
@@ -111,6 +112,7 @@ protected:
 };
 
 void ConnectNeurons(Neuron& src, Neuron& sink);
+bool AreNeuronsMergeable(Neuron& n1, Neuron& n2);
 
 #endif // _NEURON_H_
 

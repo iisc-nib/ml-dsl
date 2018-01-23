@@ -2,7 +2,7 @@
 #include <cassert>
 #include "mldslapi.h"
 
-void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInputs, std::vector<double>& weights, double bias)
+void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, std::vector<double>& weights, double bias)
 {
     Value& x = GetInputValue::Create(neuron);
     Value& w = Constant(weights);
@@ -16,7 +16,21 @@ void ConstructWeightedNeuronForwardPropFunction(Neuron& neuron, int32_t numInput
     neuron.SetForwardPropagationValue(out);
 }
 
-Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
+void AddWeightedNeuronsToLayer(Layer& layer, int32_t numNeurons)
+{
+    for (int32_t i=0 ; i<numNeurons ; ++i)
+    {
+        std::vector<double> w(numNeurons);
+        for (int j=0; j<numNeurons ; ++j)
+            w[j] = (double)rand()/RAND_MAX;
+            
+        int32_t id = 0;
+        Neuron& neuron = layer.AddNeuron(id);
+        ConstructWeightedNeuronForwardPropFunction(neuron, w, 1);
+    }
+}
+
+void ConstructSimpleThreeLayerNet(int32_t numNeurons)
 {
     Network& net = Network::Create();
     int32_t layer1ID, layer2ID, layer3ID;
@@ -31,16 +45,7 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
         neuron.SetForwardPropagationValue(GetInputValue::Create(neuron));
     }
 
-    for (int32_t i=0 ; i<numNeurons ; ++i)
-    {
-        std::vector<double> w(numNeurons);
-        for (int j=0; j<numNeurons ; ++j)
-            w[j] = (double)rand()/RAND_MAX;
-            
-        int32_t id = 0;
-        Neuron& neuron = hiddenLayer.AddNeuron(id);
-        ConstructWeightedNeuronForwardPropFunction(neuron, numNeurons, w, 1);
-    }
+    AddWeightedNeuronsToLayer(hiddenLayer, numNeurons);
 
     for(int32_t i=0; i<numNeurons ; ++i)
     {
@@ -50,9 +55,10 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
             
         int32_t id = 0;
         Neuron& neuron = outputLayer.AddOutputNeuron(id);
-        ConstructWeightedNeuronForwardPropFunction(neuron, numNeurons, w, 1);
+        ConstructWeightedNeuronForwardPropFunction(neuron, w, 1);
     }
 
+    /*
     std::map<int32_t, std::vector<int32_t>> connections;
     for (int32_t i=0 ; i<numNeurons ; ++i)
     {
@@ -63,12 +69,53 @@ Network& ConstructSimpleThreeLayerNet(int32_t numNeurons)
 
         connections[i] = srcs;
     }
+    */
 
-    net.ConnectLayers(layer1ID, layer2ID, connections);
-    net.ConnectLayers(layer2ID, layer3ID, connections);
+    net.FullyConnectLayers(layer1ID, layer2ID);
+    net.FullyConnectLayers(layer2ID, layer3ID);
     net.CheckTypes();
     
     PrintNetwork(net, std::cout);
+    // std::cout << AreNeuronsMergeable(hiddenLayer.GetNeuron(0), hiddenLayer.GetNeuron(1)) << std::endl;
+    Network::Destroy(net);
+}
+
+void TestConvolutionalNet(int32_t numInputNeurons, int32_t blockSize)
+{
+    Network& net = Network::Create();
+    int32_t layer1ID, layer2ID, layer3ID;
+    Layer& inputLayer = net.AddLayer(layer1ID);
+    Layer& hiddenLayer = net.AddLayer(layer2ID);
+    Layer& outputLayer = net.AddLayer(layer3ID);
+
+    for (int32_t i=0 ; i<numInputNeurons ; ++i)
+    {
+        int32_t id = 0;
+        InputNeuron& neuron = inputLayer.AddInputNeuron(id);
+        neuron.SetForwardPropagationValue(GetInputValue::Create(neuron));
+    }
+
+    int32_t numNeuronsInHiddenLayer = numInputNeurons - blockSize + 1;
+    AddWeightedNeuronsToLayer(hiddenLayer, numNeuronsInHiddenLayer);
+
+    int32_t numOutputNeurons = numInputNeurons;
+    for(int32_t i=0; i<numOutputNeurons ; ++i)
+    {
+        std::vector<double> w(numNeuronsInHiddenLayer);
+        for (int j=0; j<numNeuronsInHiddenLayer ; ++j)
+            w[j] = (double)rand()/RAND_MAX;
+            
+        int32_t id = 0;
+        Neuron& neuron = outputLayer.AddOutputNeuron(id);
+        ConstructWeightedNeuronForwardPropFunction(neuron, w, 1);
+    }
+
+    net.ConnectConvolutionalLayer(layer1ID, layer2ID, 0, blockSize);
+    net.FullyConnectLayers(layer2ID, layer3ID);
+
+    // PrintNetwork(net, std::cout);
+    std::cout << AreNeuronsMergeable(hiddenLayer.GetNeuron(0), outputLayer.GetNeuron(1)) << std::endl;
+    Network::Destroy(net);
 }
 
 void TestValueComparison()
@@ -118,7 +165,8 @@ void TestIRValuesAndStatements()
 
 int main()
 {
-	ConstructSimpleThreeLayerNet(4);
+	// ConstructSimpleThreeLayerNet(4);
+    TestConvolutionalNet(5, 3);
     TestValueComparison();
     TestIRValuesAndStatements();
     return 0;

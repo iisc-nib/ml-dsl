@@ -65,6 +65,33 @@ bool Network::CheckTypes()
     return true;
 }
 
+void Network::FullyConnectLayers(int32_t sourceLayer, int32_t sinkLayer)
+{
+    Layer& sourceLayerRef = GetLayer(sourceLayer);
+    Layer& sinkLayerRef = GetLayer(sinkLayer);
+    for (int32_t i=0 ; i<sinkLayerRef.GetNumberOfNeurons() ; ++i)
+    {
+        Neuron& sinkNeuron = sinkLayerRef.GetNeuron(i);
+        for (int32_t j=0; j<sourceLayerRef.GetNumberOfNeurons() ; ++j)
+            ConnectNeurons(sourceLayerRef.GetNeuron(j), sinkNeuron);
+    }
+}
+
+void Network::ConnectConvolutionalLayer(int32_t sourceLayer, int32_t sinkLayer, int32_t sourceLayerStartNeuron, int32_t blockSize)
+{
+    Layer& sourceLayerRef = GetLayer(sourceLayer);
+    Layer& sinkLayerRef = GetLayer(sinkLayer);
+    int32_t currBlockStart = sourceLayerStartNeuron;
+    for (int32_t i=0 ; i<sinkLayerRef.GetNumberOfNeurons() ; ++i)
+    {
+        Neuron& sinkNeuron = sinkLayerRef.GetNeuron(i);
+        for (int32_t j=currBlockStart; j<currBlockStart + blockSize ; ++j)
+            ConnectNeurons(sourceLayerRef.GetNeuron(j), sinkNeuron);
+
+        currBlockStart += 1;
+    }
+}
+
 Network& Network::Create()
 {
     return *(new Network);

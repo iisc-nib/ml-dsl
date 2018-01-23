@@ -21,6 +21,9 @@ public:
     int32_t GetNumberOfLayers() { return static_cast<int32_t>(m_layers.size()); }
     // TODO should we only take sourceLayer and assume sink is the next layer?
     void ConnectLayers(int32_t sourceLayer, int32_t sinkLayer, std::map<int32_t, std::vector<int32_t>>& connections);
+    void FullyConnectLayers(int32_t sourceLayer, int32_t sinkLayer);
+    // TODO is this the right API for a convolutional layer?
+    void ConnectConvolutionalLayer(int32_t sourceLayer, int32_t sinkLayer, int32_t sourceLayerStartNeuron, int32_t blockSize);
     bool CheckTypes();
 
     virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
