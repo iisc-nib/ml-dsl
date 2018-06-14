@@ -186,6 +186,8 @@ public:
         PrintValue(neuron.GetForwardPropagationValue(), m_ostr, m_indent+1);
         Indent();
         m_ostr << "</forwardvalue>" << std::endl;
+        Indent();
+        m_ostr << "<ensemble>" << neuron.GetEnsemble() << "</ensemble>" << std::endl;
         m_indent--;
         Indent();
         m_ostr << "</neuron>" << std::endl;
@@ -211,6 +213,8 @@ public:
         PrintValue(outputNeuron.GetForwardPropagationValue(), m_ostr, m_indent+1);
         Indent();
         m_ostr << "</forwardvalue>" << std::endl;
+        Indent();
+        m_ostr << "<ensemble>" << outputNeuron.GetEnsemble() << "</ensemble>" << std::endl;
         m_indent--;
         Indent();
         m_ostr << "</outputneuron>" << std::endl;

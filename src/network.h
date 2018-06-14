@@ -33,5 +33,6 @@ public:
 };
 
 void PrintNetwork(Network& network, std::ostream& ostr);
+void CollectMergeableNeuronsIntoEnsembles(Network& network);
 
 #endif // _NETWORK_H_

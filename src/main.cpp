@@ -75,6 +75,7 @@ void ConstructSimpleThreeLayerNet(int32_t numNeurons)
     net.FullyConnectLayers(layer2ID, layer3ID);
     net.CheckTypes();
     
+    CollectMergeableNeuronsIntoEnsembles(net);
     PrintNetwork(net, std::cout);
     // std::cout << AreNeuronsMergeable(hiddenLayer.GetNeuron(0), hiddenLayer.GetNeuron(1)) << std::endl;
     Network::Destroy(net);
@@ -165,9 +166,9 @@ void TestIRValuesAndStatements()
 
 int main()
 {
-	// ConstructSimpleThreeLayerNet(4);
-    TestConvolutionalNet(5, 3);
-    TestValueComparison();
-    TestIRValuesAndStatements();
+	ConstructSimpleThreeLayerNet(4);
+    // TestConvolutionalNet(5, 3);
+    // TestValueComparison();
+    // TestIRValuesAndStatements();
     return 0;
 }

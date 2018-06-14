@@ -11,6 +11,7 @@ class ValueType;
 class Neuron;
 class Value;
 class NeuronProperty;
+class Ensemble;
 
 typedef std::vector<Neuron*> NeuronList;
 
@@ -35,6 +36,7 @@ typedef std::vector<Neuron*> NeuronList;
 class Neuron
 {
 	friend class Layer;
+	friend class Ensemble;
     friend void ConnectNeurons(Neuron& src, Neuron& sink);
 public:
 
@@ -53,7 +55,8 @@ public:
     int32_t GetNeuronID();
 
     Layer& GetLayer() { return m_layer; }
-
+    Ensemble* GetEnsemble() { return m_ensemble; }
+    
     virtual void CheckTypes();
 
     virtual void AcceptVisitor(NetworkVisitor& visitor) { visitor.Visit(*this); }
@@ -73,8 +76,12 @@ protected:
 
 	std::vector<NeuronProperty*> m_properties;
 
+    Ensemble *m_ensemble;
+
+    void SetEnsemble(Ensemble *e) { m_ensemble = e; }
+
 	Neuron(Layer &layer) 
-		:m_layer(layer), m_forwardValue(nullptr)
+		:m_layer(layer), m_forwardValue(nullptr), m_ensemble(nullptr)
    	{ }
 
 	void AddSource(Neuron& src) { m_sources.push_back(&src); }
