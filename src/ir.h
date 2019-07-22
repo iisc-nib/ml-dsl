@@ -106,12 +106,25 @@ public:
     }
 };
 
+
+// TODO Consider moving the IRStatement list functionality that is common to function
+// and for loop into a shared class
 class Function
 {
-    std::string m_inputVarName;
-    std::string m_outputVarName;
+    Variable& m_inputVar;
+    Variable& m_outputVar;
     std::list<ValueSet> m_valueSets;
-
+    std::list<IRStatement*> m_stmList;
+public:
+    Function(Variable& inputVar, Variable& outputVar)
+        :m_inputVar(inputVar), m_outputVar(outputVar)
+    {}
+    const std::list<IRStatement*>& GetStatementList() { return m_stmList; }
+    void AddStatement(IRStatement& stm) { m_stmList.push_back(&stm); }
+    static Function& Create(Variable& inputVar, Variable& outputVar)
+    {
+        return *(new Function(inputVar, outputVar));
+    }
 };
 
 class IRStatementVisitor;

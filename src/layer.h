@@ -16,6 +16,7 @@ public:
     ~Ensemble() { }
     void AddNeuron(Neuron& neuron);
     NeuronList& GetNeurons() { return m_neurons; }
+    int32_t GetNumberOfNeurons() { return static_cast<int32_t>(m_neurons.size()); }
 };
 
 typedef std::vector<Ensemble*> Ensembles; // Clean code!!!
