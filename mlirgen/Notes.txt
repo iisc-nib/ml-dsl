@@ -1,0 +1,19 @@
+[T] mlir::MLIRContext
+
+ MLIRContext contains a list of modules (mlir::moduleOp)
+
+[T] mlir::OwningModuleRef
+
+Modules contain a list of functions. OwningModuleRef owns a moduleOp. It's like an auto-pointer to moduleOp
+
+[T] mlir::moduleOp
+
+" ModuleOp represents a module, or an operation containing one region with a
+single block containing opaque operations. The region of a module is not
+allowed to implicitly capture global values, and all external references
+must use symbolic references via attributes(e.g. via a string name)."
+
+[T] mlir::FuncOp
+
+Representation of a function. Modules contain these functions.
+
