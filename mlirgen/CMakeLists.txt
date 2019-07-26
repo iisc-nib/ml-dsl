@@ -14,10 +14,49 @@ add_mlirgen_chapter(mlirgen
   mlirgen.cpp  
 )
 
-include_directories(include/)
-target_link_libraries(mlirgen
+  include_directories(include/)
+  target_link_libraries(mlirgen
   PRIVATE
-    MLIRAnalysis
-    MLIRIR
-    MLIRParser
-    MLIRTransforms)
+  MLIRAffineOps 
+  MLIRAnalysis 
+  MLIRControlFlowToCFG 
+  MLIRDialect 
+  MLIREDSC 
+  MLIRExecutionEngine 
+  MLIRFxpMathOps 
+  MLIRGPU 
+  MLIRGPUtoNVVMTransforms 
+  MLIRIR 
+  MLIRJitRunner 
+  MLIRLLVMIR 
+  MLIRLinalg 
+  MLIRLoopOps 
+  MLIRLoopsToGPU 
+  MLIRMlirOptLib 
+  MLIRNVVMIR 
+  MLIROptMain 
+  MLIRParser 
+  MLIRPass 
+  MLIRQuantOps 
+  MLIRQuantizerFxpMathConfig 
+  MLIRQuantizerSupport 
+  MLIRQuantizerTransforms 
+  MLIRSDBM 
+  MLIRSPIRV 
+  MLIRSPIRVConversion 
+  MLIRSPIRVSerialization 
+  MLIRStandardOps 
+  MLIRStandardToLLVM 
+  MLIRSupport 
+  MLIRTargetLLVMIR 
+  MLIRTargetLLVMIRModuleTranslation 
+  MLIRTargetNVVMIR 
+  MLIRTestDialect 
+  MLIRTestTransforms 
+  MLIRTransformUtils 
+  MLIRTransforms 
+  MLIRTranslateClParser 
+  MLIRTranslation 
+  MLIRTypeUtilities 
+  MLIRVectorOps
+)
