@@ -78,6 +78,12 @@ void ConstructSimpleThreeLayerNet(int32_t numNeurons)
     CollectMergeableNeuronsIntoEnsembles(net);
     PrintNetwork(net, std::cout);
     // std::cout << AreNeuronsMergeable(hiddenLayer.GetNeuron(0), hiddenLayer.GetNeuron(1)) << std::endl;
+    auto func = ConstructIRForNetwork(net);
+    auto stms = func.GetStatementList();
+    for(auto iter=stms.begin(); iter!=stms.end() ; ++iter)
+    {
+        Print(*(*iter), std::cout);
+    }
     Network::Destroy(net);
 }
 

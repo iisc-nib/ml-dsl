@@ -13,6 +13,8 @@
 #include "irstatementvisitor.h"
 #include "value.h"
 
+class Network;
+
 // Lower level values that can only be used in the lowered IR
 class IRValue : public Value
 {
@@ -113,7 +115,7 @@ class Function
 {
     Variable& m_inputVar;
     Variable& m_outputVar;
-    std::list<ValueSet> m_valueSets;
+    std::list<ValueSet*> m_valueSets;
     std::list<IRStatement*> m_stmList;
 public:
     Function(Variable& inputVar, Variable& outputVar)
@@ -124,6 +126,12 @@ public:
     static Function& Create(Variable& inputVar, Variable& outputVar)
     {
         return *(new Function(inputVar, outputVar));
+    }
+    ValueSet& CreateValueSet(int32_t id, ValueType& elemType)
+    {
+        auto valueSet = new ValueSet(id, elemType);
+        m_valueSets.push_back(valueSet);
+        return *valueSet;
     }
 };
 
@@ -199,5 +207,6 @@ public:
 };
 
 void Print(IRStatement& stm, std::ostream& ostr, int32_t indent=0);
+Function& ConstructIRForNetwork(Network& network);
 
 #endif // _IR_H_

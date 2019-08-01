@@ -333,7 +333,13 @@ public:
     }
     virtual void Visit(GetValue& getValue)
     {
-        throw std::runtime_error("Unimplemented method");
+        std::string valueID = GetValueTempName(getValue.GetElementID());
+        Indent();
+        std::string temp = GetTemp();
+        m_ostr << temp << " = " << "GetValue("<< getValue.GetValueSet().GetID() << ", " << valueID << ")";
+        PrintType(getValue);
+        m_ostr << std::endl;
+        SetValueTempName(getValue, temp);
     }
 };
 
@@ -455,7 +461,9 @@ public:
     }
     virtual void Visit(GetValue& getValue)
     {
-        throw std::runtime_error("Unimplemented method");
+        m_ostr << "GetValue("<< getValue.GetValueSet().GetID() << ", ";
+        getValue.GetElementID().AcceptIRValueVisitor(*this);
+        m_ostr << ")"; 
     }
 };
 
