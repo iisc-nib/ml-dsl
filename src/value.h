@@ -403,7 +403,15 @@ inline BinaryDivide& operator/(Value& lhs, Value& rhs)
     return BinaryDivide::Create(rhs, lhs);
 }
 
+// Print out the expression represented by v. The final value is assigned to a temporary and the 
+// name of the generated temporary is returned.
 std::string PrintValue(Value& v, std::ostream& ostr, int32_t indent=0);
+// This function allows you to specify a value to which the main value is assigned.
+// The function above generates a temporary and assigns the top level value to that variable while
+// this function generates a final assignment to the specificed LHS
+void PrintValue(Value& v, std::ostream& ostr, int32_t indent, Value& topLevelLHS);
+// Only print the expression represented by the value. This does not generate any temporary assignments
+// and just prints out the full expression in a single line.
 void PrintValueExpression(Value& v, std::ostream& ostr);
 
 // Determine if the two values passed can be implemented with the same code.

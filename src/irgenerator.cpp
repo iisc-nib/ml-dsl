@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <strstream>
+#include <sstream>
 #include <vector>
 #include <cassert>
 #include "valuetype.h"
@@ -62,7 +62,7 @@ void CollectMergeableNeuronsIntoEnsembles(Network& network)
 
 static std::string ConstructLayerOutputName(int32_t layerIdx)
 {
-    std::strstream strStream;
+    std::stringstream strStream;
     strStream << "__layer" << layerIdx << "Result";
     return strStream.str();
 }
@@ -186,15 +186,16 @@ class ValueIRGenerator : public ValueVisitor
 {
     std::map<Value*, Variable*> m_valueToVariableMap;
     std::map<ConstantValue*, ValueSet*> m_constantToValueSetMap;
-    // Neuron& m_neuron;
-    // int32_t m_neuronID;
+    Neuron& m_neuron;
+    Variable& m_inputVar;
     Variable& m_loopVariable;
     std::list<IRStatement*>& m_stmList;
     int32_t m_varID;
 
     void AddDefinition(Variable& v)
     {
-        // TODO Create a definition stm and add it to the stm list
+        VariableDefinition& defn = VariableDefinition::Create(v);
+        m_stmList.push_back(&defn);
     }
     void AddVariableForValue(Value& v, Variable& var)
     {
@@ -281,9 +282,9 @@ class ValueIRGenerator : public ValueVisitor
     }
 public:
     ValueIRGenerator(Neuron& neuron, std::map<ConstantValue*, ValueSet*>& constantToValueSetMap,
-                     Variable& loopVar, std::list<IRStatement*>& stmList)
+                     Variable& loopVar, std::list<IRStatement*>& stmList, Variable& inputVar)
         :m_varID(0), m_constantToValueSetMap(constantToValueSetMap),
-         m_loopVariable(loopVar), m_stmList(stmList)
+         m_loopVariable(loopVar), m_stmList(stmList), m_neuron(neuron), m_inputVar(inputVar)
     {
     }
     Variable* GetCorrespondingVariable(Value& v)
@@ -365,9 +366,44 @@ public:
         Variable& var = CreateTempVariable(*(getInput.GetType().Clone()));
         AddVariableForValue(getInput, var);
 
-        // Add assignment statement
-        Assignment& assignmentStm = Assignment::Create(var, getInput);
-        m_stmList.push_back(&assignmentStm);
+        if (VectorType *vectorType = dynamic_cast<VectorType*>(&(getInput.GetType())))
+        {
+            // FirstIndex = first neuron first input index + Loop index
+            // inputVar[0] = prevOutput[FirstIndex]
+            // SecondIndex = first neuron second input index + Loop index
+            // inputVar[1] = prevOutput[SecondIndex]
+            // ...
+            for (int32_t i=0 ; i<vectorType->GetLength() ; ++i)
+            {
+                int32_t neuronInputIndex = m_neuron.GetSources()[i]->GetNeuronID();
+                Variable& indexVar = CreateTempVariable(*(new IntegerType));
+                Value& indexVal = BinaryAdd::Create(Constant(neuronInputIndex), m_loopVariable);
+                IRStatement& indexValAssignment = Assignment::Create(indexVar, indexVal);
+                m_stmList.push_back(&indexValAssignment);
+
+                Value& lhs = IndexedValue::Create(var, Constant(i));
+                Value& rhs = IndexedValue::Create(m_inputVar, indexVal);
+                IRStatement& inputInitialization = Assignment::Create(lhs, rhs);
+                m_stmList.push_back(&inputInitialization);
+            }
+        }
+        else
+        {
+            int32_t neuronInputIndex;
+            if (InputNeuron* inputNeuron = dynamic_cast<InputNeuron*>(&m_neuron))
+                neuronInputIndex = m_neuron.GetNeuronID();
+            else
+                neuronInputIndex = m_neuron.GetSources()[0]->GetNeuronID();
+            Variable& indexVar = CreateTempVariable(*(new IntegerType));
+            Value& indexVal = BinaryAdd::Create(Constant(neuronInputIndex), m_loopVariable);
+            IRStatement& indexValAssignment = Assignment::Create(indexVar, indexVal);
+            m_stmList.push_back(&indexValAssignment);
+
+            Value& lhs = var;
+            Value& rhs = IndexedValue::Create(m_inputVar, indexVal);
+            IRStatement& inputInitialization = Assignment::Create(lhs, rhs);
+            m_stmList.push_back(&inputInitialization);
+        }
     }   
     virtual void Visit(Reduction& reduction)
     {
@@ -470,7 +506,7 @@ void ConstructIRForEnsemble(Function& func, Ensemble& ensemble, Variable& output
     }
 
     // 2. Construct IR for the representative neuron for the ensemble
-    ValueIRGenerator irGenerator(firstNeuron, constantToValueSetMap, ensembleLoop.GetIndexVariable(), ensembleLoop.GetStatements());
+    ValueIRGenerator irGenerator(firstNeuron, constantToValueSetMap, ensembleLoop.GetIndexVariable(), ensembleLoop.GetStatements(), input);
     firstNeuron.GetForwardPropagationValue().AcceptVisitor(irGenerator);
 
     IndexedValue& indexedValue = IndexedValue::Create(output, ensembleLoop.GetIndexVariable());
@@ -504,7 +540,15 @@ Function& ConstructIRForNetwork(Network& network)
     {
         Layer& layer = network.GetLayer(i);
         std::string layerOutputVarName = ConstructLayerOutputName(i); 
-        Variable& layerOutputVar = Variable::Create(layerOutputVarName, ConstructLayerOutputType(layer));
+        bool lastLayer = i == network.GetNumberOfLayers() - 1;
+        Variable& layerOutputVar = lastLayer ? outputVar : Variable::Create(layerOutputVarName, ConstructLayerOutputType(layer));
+        
+        if(!lastLayer)
+        {
+            VariableDefinition& outputVarDefnStm = VariableDefinition::Create(layerOutputVar);
+            function.AddStatement(outputVarDefnStm);
+        }
+        
         auto ensembles = layer.GetEnsembles();
         for (int32_t j=0 ; j<ensembles.size() ; ++j)
         {

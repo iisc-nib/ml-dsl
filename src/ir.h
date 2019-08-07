@@ -164,7 +164,18 @@ public:
 
 class VariableDefinition : public IRStatement
 {
-
+    Variable& m_variable;
+public:
+    VariableDefinition(Variable& var)
+        :m_variable(var)
+    {}
+    Variable& GetVariable() { return m_variable; }
+    void AcceptVisitor(IRStatementVisitor& visitor) { visitor.Visit(*this); }
+    void CheckTypes() { m_variable.GetType(); }
+    static VariableDefinition& Create(Variable& var)
+    {
+        return *(new VariableDefinition(var));
+    }
 };
 
 class ForLoop : public IRStatement

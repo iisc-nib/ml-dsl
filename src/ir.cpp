@@ -1,3 +1,4 @@
+#include <sstream>
 #include "ir.h"
 
 int32_t ForLoop::sLoopIndexNum = 0;
@@ -69,10 +70,11 @@ public:
     { }
     virtual void Visit(Assignment& assignment)
     {
-        std::string rhsTempName = PrintValue(assignment.GetRHS(), m_ostr, m_indent);
-        Indent();
-        PrintValueExpression(assignment.GetLHS(), m_ostr);
-        m_ostr << " = " << rhsTempName << std::endl;
+        // std::string rhsTempName = PrintValue(assignment.GetRHS(), m_ostr, m_indent);
+        // Indent();
+        // PrintValueExpression(assignment.GetLHS(), m_ostr);
+        // m_ostr << " = " << rhsTempName << std::endl;
+        PrintValue(assignment.GetRHS(), m_ostr, m_indent, assignment.GetLHS());
     }
     virtual void Visit(ForLoop& forLoop)
     {
@@ -91,6 +93,13 @@ public:
         m_indent -= 1;
         Indent();
         m_ostr << "}\n";
+    }
+    virtual void Visit(VariableDefinition& varDefinition)
+    {
+        Indent();
+        m_ostr << "Define :" << varDefinition.GetVariable().GetName() << "\t";
+        PrintValueType(varDefinition.GetVariable().GetType(), m_ostr);
+        m_ostr << std::endl;
     }
 };
 

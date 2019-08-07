@@ -1,5 +1,6 @@
 #include <map>
 #include <string>
+#include <sstream>
 #include "valuetype.h"
 #include "value.h"
 #include "neuron.h"
@@ -140,6 +141,8 @@ class PrintValueVisitor : public IRValueVisitor
     int32_t m_currTemp;
     int32_t m_indent;
     std::map<Value*, std::string> m_valueToTempMap;
+    Value* m_topLevelValuePtr;
+    Value* m_topLevelLHSValue;
 
     void SetValueTempName(Value& v, const std::string& str)
     {
@@ -158,8 +161,17 @@ class PrintValueVisitor : public IRValueVisitor
         }
     }
 
-    std::string GetTemp()
+    std::string GetTemp(Value& v)
     {
+        if (&v == m_topLevelValuePtr)
+        {
+            // [TODO] This is a horrible hack to be able to print a custom LHS for an assignment statement.
+            // I will remove it at some point in the future.
+            std::stringstream strStream;
+            PrintValueExpression(*m_topLevelLHSValue, strStream);
+            std::string lhsStr = strStream.str();
+            return lhsStr;
+        }
         std::string ret = "_t";
         ret += std::to_string(m_currTemp);
         ++m_currTemp;
@@ -170,7 +182,7 @@ class PrintValueVisitor : public IRValueVisitor
     {
         const std::string& lhs = GetValueTempName(binOp.GetLHS());
         const std::string& rhs = GetValueTempName(binOp.GetRHS());
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(binOp);
         Indent();
         m_ostr << temp << " = " << lhs << " " << op << " " << rhs;
         PrintType(binOp);
@@ -180,7 +192,7 @@ class PrintValueVisitor : public IRValueVisitor
 
     void PrintType(Value& v)
     {
-        m_ostr << "\t";
+        m_ostr << "\t\t\t";
         PrintValueType(v.GetType(), m_ostr);
     }
 
@@ -191,12 +203,15 @@ class PrintValueVisitor : public IRValueVisitor
     }
 public:
     PrintValueVisitor(std::ostream& ostr, int32_t indent = 0)
-        :m_ostr(ostr), m_currTemp(0), m_indent(indent)
+        :m_ostr(ostr), m_currTemp(0), m_indent(indent), m_topLevelValuePtr(nullptr), m_topLevelLHSValue(nullptr)
+    { }
+    PrintValueVisitor(std::ostream& ostr, Value& topLevelVal, Value& topLevelLHSValue, int32_t indent = 0)
+        :m_ostr(ostr), m_currTemp(0), m_indent(indent), m_topLevelValuePtr(&topLevelVal), m_topLevelLHSValue(&topLevelLHSValue)
     { }
     virtual void Visit(IntegerConstant& intConst)
     {
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(intConst);
         m_ostr << temp << " = " << "int(" << intConst.GetValue() << ")";
         PrintType(intConst);
         m_ostr << std::endl;
@@ -205,7 +220,7 @@ public:
     virtual void Visit(BooleanConstant& boolConst)
     {
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(boolConst);
         m_ostr << temp << " = " << "bool(" << boolConst.GetValue() << ")";
         PrintType(boolConst);
         m_ostr << std::endl;
@@ -214,7 +229,7 @@ public:
     virtual void Visit(RealConstant& realConst)
     {
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(realConst);
         m_ostr << temp << " = " << "real(" << realConst.GetValue() << ")";
         PrintType(realConst);
         m_ostr << std::endl;
@@ -223,7 +238,7 @@ public:
     virtual void Visit(RealVectorConstant& realVecConst)
     {
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(realVecConst);
         m_ostr << temp << " = " << "realVector( ";
         for (int32_t i=0 ; i<realVecConst.GetValue().size() ; ++i)
             m_ostr << realVecConst.GetValue()[i] << " ";
@@ -237,7 +252,7 @@ public:
         std::string operand = GetValueTempName(unaryPlus.GetOperand());
 
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(unaryPlus);
         m_ostr << temp << " = " << "+" << operand;
         PrintType(unaryPlus);
         m_ostr << std::endl;
@@ -247,7 +262,7 @@ public:
     {
         std::string operand = GetValueTempName(unaryMinus.GetOperand());
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(unaryMinus);
         m_ostr << temp << " = " << "-" << operand;
         PrintType(unaryMinus);
         m_ostr << std::endl;
@@ -282,7 +297,7 @@ public:
     virtual void Visit(GetInputValue& getInput)
     {
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(getInput);
         m_ostr << temp << " = GetInputValue()";
         PrintType(getInput);
         m_ostr << std::endl;
@@ -290,7 +305,7 @@ public:
     }
     virtual void Visit(Reduction& reduction)
     {
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(reduction);
         Value& operand = reduction.GetOperand();
         Reduction::ReductionType reductionType = reduction.GetReductionType();
         std::string reductionTypeStr;
@@ -311,7 +326,7 @@ public:
     {
         std::string operand = GetValueTempName(function.GetOperand());
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(function);
         m_ostr << temp << " = " << function.GetName() << "(" << operand << ")";
         PrintType(function);
         m_ostr << std::endl;
@@ -319,11 +334,22 @@ public:
     }
     virtual void Visit(Variable& variable)
     {
+        // This hack is needed when we have to print an assignment that is just a variable
+        // TODO there is still a bug in that we don't print anything when the value passed to 
+        // this visitor is jusst a variable and no topLevel is specified.
+        if (&variable == m_topLevelValuePtr)
+        {
+            Indent();
+            std::string temp = GetTemp(variable);
+            m_ostr << temp << " = " << variable.GetName();
+            PrintType(variable);
+            m_ostr << std::endl;
+        }        
         SetValueTempName(variable, variable.GetName());
     }
     virtual void Visit(IndexedValue& indexedVal)
     {
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(indexedVal);
         std::string indexerTemp = GetValueTempName(indexedVal.GetIndexer());
         Indent();
         m_ostr << temp << " = " << indexedVal.GetVariable().GetName() << "[" << indexerTemp << "]";
@@ -335,7 +361,7 @@ public:
     {
         std::string valueID = GetValueTempName(getValue.GetElementID());
         Indent();
-        std::string temp = GetTemp();
+        std::string temp = GetTemp(getValue);
         m_ostr << temp << " = " << "GetValue("<< getValue.GetValueSet().GetID() << ", " << valueID << ")";
         PrintType(getValue);
         m_ostr << std::endl;
@@ -350,6 +376,11 @@ std::string PrintValue(Value& v, std::ostream& ostr, int32_t indent)
     return printVisitor.GetValueTempName(v);
 }
 
+void PrintValue(Value& v, std::ostream& ostr, int32_t indent, Value& topLevelLHS)
+{
+    PrintValueVisitor printVisitor(ostr, v, topLevelLHS, indent);
+    v.AcceptIRValueVisitor(printVisitor);
+}
 class PrintValueExpressionVisitor : public IRValueVisitor
 {
     std::ostream& m_ostr;
