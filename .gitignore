@@ -1,0 +1,4 @@
+src/*.o
+src/.vscode/
+src/mldsl-test
+src/*.swp
