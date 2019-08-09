@@ -613,16 +613,20 @@ public:
     }
     virtual void Visit(Reduction& reduction)
     {
-        Reduction *otherReduction = dynamic_cast<Reduction*>(m_val);
+        StoreAndResetValuePtr resetVal(&m_val);
+        Reduction *otherReduction = dynamic_cast<Reduction*>(m_val);        
         if (otherReduction == nullptr || !(otherReduction->GetType() == reduction.GetType()) || 
             otherReduction->GetReductionType()!=reduction.GetReductionType())
         {
             m_equal = false;
             return;
         }
+        m_val = &(otherReduction->GetOperand());
+        reduction.GetOperand().AcceptVisitor(*this);
     }
     virtual void Visit(ActivationFunction& function)
     {
+        StoreAndResetValuePtr resetVal(&m_val);
         ActivationFunction *otherFunction = dynamic_cast<ActivationFunction*>(m_val);
         if (otherFunction == nullptr || !(otherFunction->GetType() == function.GetType()) ||
             otherFunction->GetName() != function.GetName())
@@ -630,6 +634,8 @@ public:
             m_equal = false;
             return;
         }
+        m_val = &(otherFunction->GetOperand());
+        function.GetOperand().AcceptVisitor(*this);
     }
 };
 
